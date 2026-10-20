@@ -1,18 +1,42 @@
-# 📊 End-to-End Data Engineering Pipeline using Microsoft Fabric
+<p align="center">
+  <img src="docs/banner.svg" alt="Sales Data Engineering Pipeline using Microsoft Fabric" width="100%">
+</p>
 
-## 🚀 Project Overview
+<p align="center">
+  <img src="https://img.shields.io/badge/Microsoft_Fabric-0078D4?logo=microsoft&logoColor=white" alt="Microsoft Fabric">
+  <img src="https://img.shields.io/badge/Apache_Spark-PySpark_%26_SQL-E25A1C?logo=apachespark&logoColor=white" alt="Apache Spark">
+  <img src="https://img.shields.io/badge/Delta_Lake-00ADD4" alt="Delta Lake">
+  <img src="https://img.shields.io/badge/OneLake-ABFSS-0078D4" alt="OneLake">
+  <img src="https://img.shields.io/badge/Orchestration-Fabric_Pipelines-5C2D91" alt="Fabric Pipelines">
+</p>
 
-This project demonstrates an **end-to-end data engineering pipeline** built using **Microsoft Fabric**, **Apache Spark**, and **Delta Lake** following a **Medallion Architecture (Raw → Landing → Bronze → Silver → Gold)**.
-
-The pipeline ingests raw CSV sales data, applies data quality checks and transformations, and produces **analytics-ready fact and dimension tables**. The entire flow is orchestrated using **Fabric Pipelines** with success and failure notifications.
+<p align="center">
+  <a href="#%EF%B8%8F-architecture">Architecture</a> ·
+  <a href="#-pipeline-orchestration">Orchestration</a> ·
+  <a href="#-notebooks-breakdown">Notebooks</a> ·
+  <a href="#-data-model-gold-layer">Data model</a> ·
+  <a href="#-screenshots">Screenshots</a>
+</p>
 
 ---
 
+> An **end-to-end data engineering pipeline** built using **Microsoft Fabric**, **Apache Spark**, and **Delta Lake** following a **Medallion Architecture (Raw → Landing → Bronze → Silver → Gold)**.
+
+The pipeline ingests raw CSV sales data, applies data quality checks and transformations, and produces **analytics-ready fact and dimension tables**. The entire flow is orchestrated using **Fabric Pipelines** with success and failure notifications.
+
 ## 🏗️ Architecture
 
-**Medallion Layers:**
+<p align="center">
+  <img src="architecture.jpg" alt="End-to-end data pipeline architecture: medallion architecture in Microsoft Fabric" width="900">
+</p>
 
-```
+<table>
+<tr>
+<td width="45%" valign="top">
+
+**Medallion layers**
+
+```text
 Raw Files
    ↓
 Landing (Partitioned by Processing_Date)
@@ -24,50 +48,52 @@ Silver (Business Transformations)
 Gold (Star Schema: Dimensions + Fact)
 ```
 
-**Technologies Used**
+</td>
+<td width="55%" valign="top">
 
-* Microsoft Fabric
-* Apache Spark (PySpark & Spark SQL)
-* Delta Lake
-* OneLake (ABFSS)
-* Fabric Pipelines (Orchestration)
-* Office 365 Email (Notifications)
+**Technologies used**
 
----
+| | |
+|---|---|
+| 🟦 | Microsoft Fabric |
+| ⚡ | Apache Spark (PySpark & Spark SQL) |
+| 🔺 | Delta Lake |
+| ☁️ | OneLake (ABFSS) |
+| 🔁 | Fabric Pipelines (Orchestration) |
+| 📧 | Office 365 Email (Notifications) |
+
+</td>
+</tr>
+</table>
 
 ## 🔄 Pipeline Orchestration
 
 The Fabric pipeline executes the following steps sequentially:
 
-1. **Raw → Landing**
-2. **Landing → Bronze**
-3. **Bronze → Silver**
-4. **Silver → Gold**
-5. **Email Notification (Success / Failure)**
+| Step | Activity |
+|:-:|---|
+| 1 | **Raw → Landing** |
+| 2 | **Landing → Bronze** |
+| 3 | **Bronze → Silver** |
+| 4 | **Silver → Gold** |
+| 5 | **Email Notification (Success / Failure)** |
 
-✔ Fully automated
-✔ Idempotent
-✔ Production-ready
-
----
+✔ Fully automated &nbsp;·&nbsp; ✔ Idempotent &nbsp;·&nbsp; ✔ Production-ready
 
 ## 📁 Notebooks Breakdown
 
----
-
-### 1️⃣ Raw → Landing
+<details open>
+<summary><b>1️⃣ Raw → Landing</b></summary>
 
 **Purpose**
+- Read raw CSV files from OneLake
+- Add `Processing_Date`
+- Store data in a partitioned Landing zone
 
-* Read raw CSV files from OneLake
-* Add `Processing_Date`
-* Store data in a partitioned Landing zone
-
-**Key Features**
-
-* Schema inference
-* Partitioning by `Processing_Date`
-* Data availability check
+**Key features**
+- Schema inference
+- Partitioning by `Processing_Date`
+- Data availability check
 
 ```python
 df_new = df.withColumn('Processing_Date', lit(processed_date))
@@ -80,21 +106,20 @@ df_new.write \
     .save(".../Files/Landing")
 ```
 
----
+</details>
 
-### 2️⃣ Landing → Bronze
+<details>
+<summary><b>2️⃣ Landing → Bronze</b></summary>
 
 **Purpose**
+- Enforce schema
+- Deduplicate records
+- Perform incremental UPSERT into Delta Bronze table
 
-* Enforce schema
-* Deduplicate records
-* Perform incremental UPSERT into Delta Bronze table
-
-**Key Features**
-
-* Explicit schema definition
-* Deterministic deduplication using `ROW_NUMBER`
-* Delta `MERGE` (SCD Type 1)
+**Key features**
+- Explicit schema definition
+- Deterministic deduplication using `ROW_NUMBER`
+- Delta `MERGE` (SCD Type 1)
 
 ```sql
 MERGE INTO tblsales_bronze
@@ -102,25 +127,24 @@ USING t_new_data_dedup
 ON Order_ID AND Customer_ID
 ```
 
-✔ Handles late-arriving data
+✔ Handles late-arriving data<br>
 ✔ Prevents duplicate key conflicts
 
----
+</details>
 
-### 3️⃣ Bronze → Silver (Transformations)
+<details>
+<summary><b>3️⃣ Bronze → Silver (Transformations)</b></summary>
 
 **Purpose**
-
-* Apply business logic
-* Improve data quality
-* Create enriched metrics
+- Apply business logic
+- Improve data quality
+- Create enriched metrics
 
 **Transformations**
-
-* Remove null keys
-* Remove duplicates
-* Calculate delivery days
-* Calculate profit margin
+- Remove null keys
+- Remove duplicates
+- Calculate delivery days
+- Calculate profit margin
 
 ```python
 df_days = df.withColumn(
@@ -134,117 +158,105 @@ df_final = df_days.withColumn(
 )
 ```
 
-**Silver Table**
+**Silver table:** `tblsales_silver` · Delta format · Incremental MERGE
 
-* `tblsales_silver`
-* Delta format
-* Incremental MERGE
+</details>
 
----
+<details>
+<summary><b>4️⃣ Silver → Gold (Star Schema)</b></summary>
 
-### 4️⃣ Silver → Gold (Star Schema)
+**🟡 Dimension tables:** `Dim_Customer`, `Dim_Product`
 
-**Gold Tables Created**
-
-#### 🟡 Dimension Tables
-
-* `Dim_Customer`
-* `Dim_Product`
-
-✔ Deduplicated by business key
-✔ SCD Type 1
+✔ Deduplicated by business key<br>
+✔ SCD Type 1<br>
 ✔ Deterministic logic using Window functions
 
 ```python
 Window.partitionBy("Customer_ID")
 ```
 
----
+**🔵 Fact table:** `Fact_Sales`
 
-#### 🔵 Fact Table
-
-* `Fact_Sales`
-
-✔ Incremental MERGE
-✔ Analytics-ready
+✔ Incremental MERGE<br>
+✔ Analytics-ready<br>
 ✔ Fully conformed dimensions
 
----
+</details>
 
-### 5️⃣ Monitoring & Metrics
+<details>
+<summary><b>5️⃣ Monitoring & Metrics</b></summary>
 
 After every MERGE:
-
-* Rows inserted
-* Rows updated
-* Rows deleted
-* Total affected rows
+- Rows inserted
+- Rows updated
+- Rows deleted
+- Total affected rows
 
 ```python
 history_df = delta_table.history(1)
 ```
 
----
+</details>
 
 ## 📈 Key Design Decisions
 
-* **Delta Lake MERGE** for incremental processing
-* **Window-based deduplication** to avoid ambiguous MERGE errors
-* **Partition pruning** using `processing_date`
-* **Idempotent pipelines**
-* **Separation of concerns** (Raw vs Bronze vs Silver vs Gold)
-
----
+| Decision | Why |
+|---|---|
+| **Delta Lake MERGE** | Incremental processing |
+| **Window-based deduplication** | Avoids ambiguous MERGE errors |
+| **Partition pruning** | Using `processing_date` |
+| **Idempotent pipelines** | Safe re-runs |
+| **Separation of concerns** | Raw vs Bronze vs Silver vs Gold |
 
 ## 📬 Notifications
 
-* ✅ Success Email on successful pipeline run
-* ❌ Failure Email on pipeline failure
-
-Implemented using **Office 365 Email activity** in Fabric Pipelines.
-
----
+✅ Success email on a successful pipeline run · ❌ Failure email on pipeline failure, implemented using the **Office 365 Email activity** in Fabric Pipelines.
 
 ## 🧪 Data Model (Gold Layer)
 
-**Star Schema**
+**Star schema**
 
-```
+```text
             Dim_Customer
                   |
                   |
 Dim_Product — Fact_Sales
 ```
 
-Optimized for:
+Optimized for BI tools, reporting and analytics workloads.
 
-* BI tools
-* Reporting
-* Analytics workloads
+## 📸 Screenshots
 
----
+| 🔁 Pipeline run (all activities succeeded) |
+|:--:|
+| ![Fabric pipeline run](Screenshot%202026-01-25%20232129.png) |
+
+| 🧩 Semantic model (star schema) | 📊 Sales report |
+|:--:|:--:|
+| ![Semantic model](Screenshot%202026-01-26%20000543.png) | ![Sales report](Screenshot%202026-01-26%20000642.png) |
+
+| ✅ Success email | ❌ Failure email |
+|:--:|:--:|
+| ![Success email](Screenshot%202026-01-25%20232107.png) | ![Failure email](Screenshot%202026-01-25%20232059.png) |
 
 ## 🧠 Learnings & Highlights
 
-* Real-world Delta MERGE pitfalls and fixes
-* Source deduplication before MERGE
-* Dimension vs Fact modeling rules
-* Fabric OneLake + Delta best practices
-* End-to-end orchestration in Microsoft Fabric
-
----
+- Real-world Delta MERGE pitfalls and fixes
+- Source deduplication before MERGE
+- Dimension vs Fact modeling rules
+- Fabric OneLake + Delta best practices
+- End-to-end orchestration in Microsoft Fabric
 
 ## 📌 Future Enhancements
 
-* SCD Type 2 for dimensions
-* Data Quality framework
-* Parameterized pipelines
-* Incremental file ingestion
-* Power BI semantic model
-
----
+- SCD Type 2 for dimensions
+- Data Quality framework
+- Parameterized pipelines
+- Incremental file ingestion
+- Power BI semantic model
 
 ## 👤 Author
 
-**Rohesen Maurya**
-Data Engineer | Microsoft Fabric | Spark | Delta Lake
+**Rohesen Maurya**: Data Engineer | Microsoft Fabric | Spark | Delta Lake ([@Rohesen](https://github.com/Rohesen))
+
+<p align="center"><sub>If this project helped you, a ⭐ is appreciated</sub></p>
